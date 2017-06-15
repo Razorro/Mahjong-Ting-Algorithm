@@ -23,4 +23,8 @@ An algorithm that analyse whether a card list can be Hu or Ting
 _userCard: 用户的手牌，用haspMap表示，key表示牌值，value表示数量  
 _tingCard: 能听的牌，也就是打出后进入听牌状态  
 _huCard: 能胡的牌，听牌后可以胡的牌  
-_isHu: 是否可胡  
+_isHu: 是否可胡
+  
+int analyseCount：统计的进行递归的次数，用作性能分析  
+int _magicCard：万能牌  
+int _magicCardSize：万能牌的数量
