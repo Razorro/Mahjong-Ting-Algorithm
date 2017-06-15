@@ -1,21 +1,22 @@
-#include "standard.h"
+#include "TingAnalyse.h"
 
-Analyser::Analyser(int userCard[],int n,int magicCard):analyseCount(0)
+void Analyser::start(unsigned char userCard[],int n)
 {
-	for(int i=0;i<n;++i)
-		++_userCard[userCard[i]];
-
-	if(magicCard != 0) 
-		_magicCard = magicCard;
-
 	_isHu = false;
 
-	if(_userCard.find(magicCard) != _userCard.end())
-		_magicCardSize = _userCard[magicCard];
+	for(int i=0;i<n;++i)
+		_userCard[userCard[i]];
 
-	// ÏÈ¿Û³ı½«ÅÆµÄ·ÖÎö
+	if(_magicCard != 0)
+	{
+		_magicCardSize = _userCard[_magicCard];
+		_userCard[_magicCard] = 0;
+	}
+
+	// åˆ†æä¸€ï¼šå…ˆæ‰£é™¤å°†ç‰Œï¼Œå†è¿‡æ»¤æ‰€æœ‰åƒç¢°ä¸‹çš„æƒ…å†µ
 	for(auto& elem:_userCard)
 	{
+		++analyseCount;
 		hashMap TempUserCard(_userCard);
 		if(elem.second == 2)
 		{
@@ -24,7 +25,7 @@ Analyser::Analyser(int userCard[],int n,int magicCard):analyseCount(0)
 		}
 	}
 
-	// ±ê×¼·ÖÎö£º½«ËùÓĞ³ÔÅöµÄÅÆ¶¼¹ıÂË
+	// åˆ†æäºŒï¼šæšä¸¾æ‰€æœ‰åœ¨è¿‡æ»¤å®Œåƒç¢°ä¸‹çš„æƒ…å†µ
 	analyse(_userCard);
 }
 
@@ -35,6 +36,7 @@ void Analyser::analyse(hashMap userCard)
 	{
 		if(elem.second == 3)
 		{
+			analyseCount++;
 			isEnd = false;
 			hashMap TempUserCard(userCard);
 			TempUserCard[elem.first] -= 3;
@@ -47,6 +49,7 @@ void Analyser::analyse(hashMap userCard)
 		if ((getValue(elem.first) < 8) && (getColor(elem.first) <= 2) && ((elem.second > 0) && 
 			(userCard[elem.first + 1] > 0) && (userCard[elem.first + 2] > 0)))
 		{
+			analyseCount++;
 			isEnd = false;
 			hashMap TempUserCard(userCard);
 			--TempUserCard[elem.first];
@@ -56,7 +59,7 @@ void Analyser::analyse(hashMap userCard)
 		}
 	}
 
-	//¶ÔÊÖÅÆ½øĞĞ·ÖÎö
+	//å¯¹æ‰‹ç‰Œè¿›è¡Œåˆ†æ
 	if(isEnd){
 		hashMap lastCard;
 		int count = 0;
@@ -66,24 +69,108 @@ void Analyser::analyse(hashMap userCard)
 			if(elem.second)
 				lastCard[elem.first] = elem.second;
 		}
-		if(count>5) return;
-		printCard(lastCard);
-		analyseCount++;
-		dealWithLastCard(lastCard,count);
+		if(count - 2*_magicCardSize <= 5)
+		{
+			//printCard(lastCard);
+			dealWithLastCard(lastCard,count);
+		}
+
 	}
-	
+
+}
+
+void Analyser::analyseWithMagic(hashMap userCard,int magicNum)
+{
+	bool isEnd = true;
+	for(auto &elem:userCard)
+	{
+
+		if(elem.second == 2 && magicNum>0)
+		{
+			analyseCount++;
+			isEnd = false;
+			hashMap TempUserCard(userCard);
+			TempUserCard[elem.first] -= 2;
+
+			analyseWithMagic(TempUserCard,magicNum-1);
+		}
+	}
+
+	for(auto &elem:userCard)
+	{
+
+		int value = getValue(elem.first),color = getColor(elem.first);
+		if ((value < 8) && (color <= 2) && (elem.second > 0) && (magicNum>0))
+		{
+			if(userCard.count(elem.first+1) && userCard[elem.first+1]>0)
+			{
+				analyseCount++;
+				isEnd = false;
+				hashMap TempUserCard(userCard);
+				--TempUserCard[elem.first];
+				--TempUserCard[elem.first + 1];
+				analyseWithMagic(TempUserCard,magicNum-1);
+			}
+			else if(userCard.count(elem.first+2) && userCard[elem.first+2]>0)
+			{
+				analyseCount++;
+				isEnd = false;
+				hashMap TempUserCard(userCard);
+				--TempUserCard[elem.first];
+				--TempUserCard[elem.first + 2];
+				analyseWithMagic(TempUserCard,magicNum-1);
+			}
+		}
+	}
+
+	for(auto &elem:userCard)
+	{
+		if(elem.second == 1 && magicNum>1)
+		{
+			analyseCount++;
+			isEnd = false;
+			hashMap TempUserCard(userCard);
+			TempUserCard[elem.first] -= 1;
+
+			analyseWithMagic(TempUserCard,magicNum-2);
+		}
+	}
+
+	//å¯¹æ‰‹ç‰Œè¿›è¡Œåˆ†æ
+	if(isEnd){
+		hashMap lastCard;
+		int count = 0;
+		for(auto& elem:userCard)
+		{
+			count += elem.second;
+			if(elem.second)
+				lastCard[elem.first] = elem.second;
+		}
+
+		cout<<"  magic card num:"<<magicNum<<endl;
+		printCard(lastCard);
+
+
+		dealWithLastCard2(lastCard,count,magicNum);
+	}
 }
 
 void Analyser::printCard(hashMap& userCard) const
 {
 	for(auto &elem:userCard)
-		printf("Card data:%x  ---  Card number:%d\n",elem.first,elem.second);
+		printf("Card data:%d  ---  Card number:%d\n\n",elem.first,elem.second);
 	cout<<endl;
 }
 
-// Ã¶¾ÙËùÓĞ¿ÉÄÜ
+// åˆ°åº•ä¹‹åæšä¸¾æ‰€æœ‰å¯èƒ½
 void Analyser::dealWithLastCard(hashMap& lastCard,int count)
 {
+	if(_magicCardSize>0)
+	{
+		analyseWithMagic(lastCard,_magicCardSize);
+		return;
+	}
+
 	int kindNum = lastCard.size();
 	if(count == 0)
 	{
@@ -97,9 +184,34 @@ void Analyser::dealWithLastCard(hashMap& lastCard,int count)
 		Solution3(kindNum,lastCard);
 	else if(count == 5)
 		Solution5(kindNum,lastCard);
-	
+
+	return;
 }
 
+// åœ¨å¤„ç†å®Œä¸‡èƒ½ç‰Œä¹‹åçš„æƒ…æ™¯æšä¸¾
+void Analyser::dealWithLastCard2(hashMap& lastCard,int count,int magicNum)
+{
+	if(magicNum == 0)
+	{
+		int kindNum = lastCard.size();
+		if(count == 0)
+		{
+			_isHu = true;
+			return;
+		}
+
+		else if(count == 2)
+			Solution2(kindNum,lastCard);
+		else if(count == 3)
+			Solution3(kindNum,lastCard);
+		else if(count == 5)
+			Solution5(kindNum,lastCard);
+
+		return;
+	}
+	else
+		_isHu = true;
+}
 
 void Analyser::getSequencialCombo(set<int>& CardValue,hashMap& lastCard)
 {
@@ -159,6 +271,7 @@ void Analyser::Solution2(int kindNum,hashMap& lastCard)
 		break;
 	}
 }
+
 void Analyser::Solution3(int kindNum,hashMap& lastCard)
 {
 	switch (kindNum)
@@ -167,11 +280,19 @@ void Analyser::Solution3(int kindNum,hashMap& lastCard)
 		{
 			for(auto& elem:lastCard)
 			{
-				if(elem.second == 1)
+				if (elem.second == 1)
 					_tingCard.insert(elem.first);
+				
 				else
-					_huCard.insert(elem.first);
+					_huCard.insert(elem.first);		
 			}
+
+			set<int> CardValue;
+			for (auto& initElem : lastCard)
+				CardValue.insert(initElem.first);
+
+			getSequencialCombo(CardValue, lastCard);
+
 			break;
 		}
 	case 3:
@@ -186,6 +307,7 @@ void Analyser::Solution3(int kindNum,hashMap& lastCard)
 		break;
 	}
 }
+
 void Analyser::Solution5(int kindNum,hashMap& lastCard)
 {
 	switch (kindNum)
@@ -226,3 +348,16 @@ void Analyser::Solution5(int kindNum,hashMap& lastCard)
 		break;
 	}
 }
+
+void Analyser::resetState()
+{
+	analyseCount = 0;
+	// _magicCard = 0;
+	_magicCardSize = 0;
+
+	_userCard.clear();
+	_tingCard.clear();
+	_huCard.clear();
+	_isHu = false;
+}
+
