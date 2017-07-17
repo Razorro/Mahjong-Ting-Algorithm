@@ -1,7 +1,12 @@
 #include "TingAnalyse.h"
 
-void Analyser::start(BYTE userCard[],int n)
+void Analyser::start(BYTE userCard[],int n,int magicCard)
 {
+	resetState();
+
+	if (magicCard != 0)
+		_magicCard = magicCard;
+
 	for(int i=0;i<n;++i)
 		++_userCard[userCard[i]];
 	
@@ -9,18 +14,20 @@ void Analyser::start(BYTE userCard[],int n)
 	{
 		_magicCardSize = _userCard[_magicCard];
 		_userCard[_magicCard] = 0;
-	}
 
-	for(auto& elem:_userCard)
-	{
-		++analyseCount;
-		hashMap TempUserCard(_userCard);
-		if(elem.second == 2)
+		for (auto& elem : _userCard)
 		{
-			TempUserCard[elem.first] -= 2;
-			analyse(TempUserCard);
+			++analyseCount;
+			hashMap TempUserCard(_userCard);
+			if (elem.second == 2)
+			{
+				TempUserCard[elem.first] -= 2;
+				analyse(TempUserCard);
+			}
 		}
 	}
+
+
 
 	analyse(_userCard);
 }
@@ -30,7 +37,6 @@ void Analyser::analyse(hashMap userCard)
 	bool isEnd = true;
 	for(auto &elem:userCard)
 	{
-
 		if(elem.second >= 3)
 		{
 			analyseCount++;
@@ -66,12 +72,9 @@ void Analyser::analyse(hashMap userCard)
 			if(elem.second)
 				lastCard[elem.first] = elem.second;
 		}
+		
 		if(count - 2*_magicCardSize <= 5)
-		{
-			//printCard(lastCard);
 			dealWithLastCard(lastCard,count);
-		}
-
 	}
 
 }
@@ -166,20 +169,14 @@ void Analyser::dealWithLastCard(hashMap& lastCard,int count)
 	}
 
 	int kindNum = lastCard.size();
-	if(count == 0)
-	{
-		for (auto &elem : _userCard)
-			_tingCard.insert(elem.first);
-		
-		return;
-	}
-
+	if (count == 0)
+		Solution0(lastCard);
 	else if(count == 2)
-		Solution2(kindNum,lastCard);
+		Solution2(lastCard);
 	else if(count == 3)
-		Solution3(kindNum,lastCard);
+		Solution3(lastCard);
 	else if(count == 5)
-		Solution5(kindNum,lastCard);
+		Solution5(lastCard);
 
 	return;
 }
@@ -189,20 +186,14 @@ void Analyser::dealWithLastCard2(hashMap& lastCard,int count,int magicNum)
  	if(magicNum == 0)
 	{
 		int kindNum = lastCard.size();
-		if(count == 0)
-		{
-			for (auto &elem : _userCard)
-				_tingCard.insert(elem.first);//获取所听的牌
-			
-			return;
-		}
-
+		if (count == 0)
+			Solution0(lastCard);
 		else if(count == 2)
-			Solution2(kindNum,lastCard);
+			Solution2(lastCard);
 		else if(count == 3)
-			Solution3(kindNum,lastCard);
+			Solution3(lastCard);
 		else if(count == 5)
-			Solution5(kindNum,lastCard);
+			Solution5(lastCard);
 
 		return;
 	}
@@ -270,24 +261,36 @@ void Analyser::getSequencialCombo(set<int>& CardValue,hashMap& lastCard)
 	}
 }
 
-
-void Analyser::Solution2(int kindNum,hashMap& lastCard)
+void Analyser::Solution0(hashMap& lastCard)
 {
+	for (auto &elem : _userCard)
+		_tingCard.insert(elem.first);
+
+	return;
+}
+
+void Analyser::Solution2(hashMap& lastCard)
+{
+	int kindNum = lastCard.size();
 	switch (kindNum)
 	{
 	case 1:
+		
+		for (auto &elem : lastCard)
 		{
-			for (auto &elem : lastCard)
-			_tingCard.insert(elem.first);	//获取所听的牌
-			break;
+			_tingCard.insert(elem.first);
+			_tingHuCard[elem.first].insert(elem.first);
 		}
+		break;
+		
 	case 2:
 		{
 			hashSet temp;
 			BYTE GangCard = 0;
 			for(auto &elem:lastCard)
 			{
-				if(_userCard[elem.first] == 4) GangCard = elem.first;		// 防止在手里已经有四张牌的时候但是达成听这张牌的条件
+				if(_userCard[elem.first] == 4) 
+					GangCard = elem.first;		// 防止在手里已经有四张牌的时候但是达成听这张牌的条件
 				temp.insert(elem.first);
 			}
 			if(GangCard)
@@ -300,8 +303,9 @@ void Analyser::Solution2(int kindNum,hashMap& lastCard)
 		break;
 	}
 }
-void Analyser::Solution3(int kindNum,hashMap& lastCard)
+void Analyser::Solution3(hashMap& lastCard)
 {
+	int kindNum = lastCard.size();
 	switch (kindNum)
 	{
 	case 2:
@@ -332,8 +336,9 @@ void Analyser::Solution3(int kindNum,hashMap& lastCard)
 		break;
 	}
 }
-void Analyser::Solution5(int kindNum,hashMap& lastCard)
+void Analyser::Solution5(hashMap& lastCard)
 {
+	int kindNum = lastCard.size();
 	switch (kindNum)
 	{
 	case 2:
@@ -381,13 +386,13 @@ void Analyser::Solution5(int kindNum,hashMap& lastCard)
 
 void Analyser::resetState()
 {
-	_magicCard = 0;
 	analyseCount = 0;
 	_magicCardSize = 0;
 
 	_userCard.clear();
 	_tingCard.clear();
 	_huCard.clear();
+	_tingHuCard.clear();
 }
 
 
