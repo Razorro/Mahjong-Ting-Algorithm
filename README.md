@@ -9,7 +9,7 @@
 
 
 ## 数据成员说明
-hashMap   _userCard: 用户的手牌，用haspMap表示，key表示牌值，value表示数量  
+hashMap   _userCard: 用户的手牌，用haspMap表示，key表示牌值，value表示数量    
 hashMap   _tingHuCard: 用户打出哪些牌，可胡哪些牌,key表示打出后进入听状态，value为可胡的牌
 
   
