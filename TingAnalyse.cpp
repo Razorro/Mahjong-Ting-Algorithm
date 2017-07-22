@@ -154,7 +154,7 @@ void Analyser::analyseWithMagic(hashMap userCard,int magicNum)
 			}
 		}
 
-		printCard(lastCard);
+		//printCard(lastCard);
 		dealWithLastCard2(lastCard,count,magicNum);
 	}
 }

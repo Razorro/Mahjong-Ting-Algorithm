@@ -45,13 +45,10 @@ public:
 	int getMagicCard() const { return _magicCard; }
 	void printCard(hashMap& userCard) const;
 	
-	
-	hashSet getTingCard() const { return _tingCard; };
-	hashSet getHuCard() const { return _huCard; }
 	hashByteMap getTingHuCard() const { return _tingHuCard; }
 	int getRecursiveTime() const { return analyseCount; }
 	bool isHu() const { return _huFlag; }
-	bool isTing() const { return !_tingCard.empty(); }
+	bool isTing() const { return !_tingHuCard.empty(); }
 	void resetState();
 
 
@@ -73,9 +70,8 @@ private:
 	void Solution5(hashMap& lastCard);
 
 	hashMap _userCard;
-	hashSet	_tingCard;
-	hashSet	_huCard;
 	hashByteMap _tingHuCard;
+	hashSet _tingCard;
 
 	int analyseCount;
 	int _magicCard;
