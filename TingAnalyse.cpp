@@ -15,19 +15,28 @@ void Analyser::start(BYTE userCard[],int n,int magicCard)
 		_magicCardSize = _userCard[_magicCard];
 		_userCard[_magicCard] = 0;
 
-		for (auto& elem : _userCard)
+		if(_magicCardSize)
 		{
-			++analyseCount;
-			hashMap TempUserCard(_userCard);
-			if (elem.second == 2)
+			for (auto& elem : _userCard)
 			{
-				TempUserCard[elem.first] -= 2;
-				analyse(TempUserCard);
+				++analyseCount;
+				hashMap TempUserCard(_userCard);
+				if (elem.second == 2)
+				{
+					TempUserCard[elem.first] -= 2;
+					analyse(TempUserCard);
+				}
+
+				if (elem.second == 1)
+				{
+					TempUserCard[elem.first] -= 1;
+					_magicCardSize -= 1;
+					analyse(TempUserCard);
+					_magicCardSize += 1;
+				}
 			}
 		}
 	}
-
-
 
 	analyse(_userCard);
 }
@@ -39,7 +48,7 @@ void Analyser::analyse(hashMap userCard)
 	{
 		if(elem.second >= 3)
 		{
-			analyseCount++;
+			++analyseCount;
 			isEnd = false;
 			hashMap TempUserCard(userCard);
 			TempUserCard[elem.first] -= 3;
@@ -52,7 +61,7 @@ void Analyser::analyse(hashMap userCard)
 		if ((getValue(elem.first) < 8) && (getColor(elem.first) <= 2) && ((elem.second > 0) && 
 			(userCard[elem.first + 1] > 0) && (userCard[elem.first + 2] > 0)))
 		{
-			analyseCount++;
+			++analyseCount;
 			isEnd = false;
 			hashMap TempUserCard(userCard);
 			--TempUserCard[elem.first];
@@ -62,7 +71,6 @@ void Analyser::analyse(hashMap userCard)
 		}
 	}
 
-	//对手牌进行分析
 	if(isEnd){
 		hashMap lastCard;
 		int count = 0;
@@ -84,10 +92,9 @@ void Analyser::analyseWithMagic(hashMap userCard,int magicNum)
 	bool isEnd = true;
 	for(auto &elem:userCard)
 	{
-
 		if(elem.second == 2 && magicNum>0)
 		{
-			analyseCount++;
+			++analyseCount;
 			isEnd = false;
 			hashMap TempUserCard(userCard);
 			TempUserCard[elem.first] -= 2;
@@ -98,13 +105,12 @@ void Analyser::analyseWithMagic(hashMap userCard,int magicNum)
 
 	for(auto &elem:userCard)
 	{
-
 		int value = getValue(elem.first),color = getColor(elem.first);
 		if ((value <= 8) && (color <= 2) && (elem.second > 0) && (magicNum>0))
 		{
 			if(userCard.count(elem.first+1) && userCard[elem.first+1]>0)
 			{
-				analyseCount++;
+				++analyseCount;
 				isEnd = false;
 				hashMap TempUserCard(userCard);
 				--TempUserCard[elem.first];
@@ -113,7 +119,7 @@ void Analyser::analyseWithMagic(hashMap userCard,int magicNum)
 			}
 			else if(userCard.count(elem.first+2) && userCard[elem.first+2]>0)
 			{
-				analyseCount++;
+				++analyseCount;
 				isEnd = false;
 				hashMap TempUserCard(userCard);
 				--TempUserCard[elem.first];
@@ -127,7 +133,7 @@ void Analyser::analyseWithMagic(hashMap userCard,int magicNum)
 	{
 		if(elem.second == 1 && magicNum>1)
 		{
-			analyseCount++;
+			++analyseCount;
 			isEnd = false;
 			hashMap TempUserCard(userCard);
 			TempUserCard[elem.first] -= 1;
@@ -197,31 +203,59 @@ void Analyser::dealWithLastCard2(hashMap& lastCard,int count,int magicNum)
 
 		return;
 	}
-	else
+	else if(count < 5)
 	{
 		if(count == 0)
 		{
-			for(auto &elem:_userCard)
-				_tingCard.insert(elem.first);
-			_tingCard.insert(_magicCard);
+			_huFlag = true;
 			return;
 		}
 
-		// 因为只要有两张以上万能牌且count不为0，就会以2张万能牌凑吃碰组合，所以此时magicNum必为1
 		if(count == 1)
 		{
-			_tingCard.insert(lastCard.begin()->first);
-			_tingCard.insert(_magicCard);
+			int existCard = lastCard.begin()->first;
+			
+			_tingHuCard[existCard].insert(all_in);
+			_tingHuCard[_magicCard].insert(existCard);
 		}
 		else if(count == 2)
 		{
-			for(auto &elem:lastCard)
-				_tingCard.insert(elem.first);
+			vector<int> key;
+			for (auto &elem : lastCard)
+				key.push_back(elem.first);
+
+			int card1 = key[0], card2 = key[1];
+			// 刻子听胡牌
+			_tingHuCard[card1].insert(card2);
+			_tingHuCard[card2].insert(card1);
+
+			// 顺子听胡牌
+			getSequenceWithMagic(card1, card2);
+			getSequenceWithMagic(card2, card1);
 		}
 	}
 }
 
-void Analyser::getSequencialCombo(set<int>& CardValue,hashMap& lastCard)
+void Analyser::getSequenceWithMagic(int card1, int card2)
+{
+	int v1 = getValue(card1), c1 = getColor(card1);
+	int v2 = getValue(card2), c2 = getColor(card2);
+	if (c1 < 2)
+	{
+		if (v1 == 1)
+			_tingHuCard[card2].insert({ card1 + 1,card1 + 2 });
+		else if (v1 == 2)
+			_tingHuCard[card2].insert({ card1 - 1,card1 + 1,card1 + 2 });
+		else if (v1 == 9)
+			_tingHuCard[card2].insert({ card1 - 1,card1 - 2 });
+		else if (v1 == 8)
+			_tingHuCard[card2].insert({ card1 + 1,card1 - 1,card1 - 2 });
+		else
+			_tingHuCard[card2].insert({ card1 + 1,card1 + 2,card1 - 1,card1 - 2 });
+	}
+}
+
+void Analyser::getSequencialCombo(hashSet& CardValue,hashMap& lastCard)
 {
 	for(auto& elem:CardValue)
 	{
@@ -235,37 +269,28 @@ void Analyser::getSequencialCombo(set<int>& CardValue,hashMap& lastCard)
 			--TemplastCard[elem],--TemplastCard[elem+1];
 			auto itr = find_if(TemplastCard.begin(),TemplastCard.end(),[](hashMap::value_type itr){ return itr.second == 1; });
 			if(value == 1)
-			{
-				_tingCard.insert(itr->first);
-				_huCard.insert(elem+2);
-			}
+				_tingHuCard[itr->first].insert(elem + 2);
+			
 			else if (value == 8)
-			{
-				_tingCard.insert(itr->first);
-				_huCard.insert(elem - 1);
-			}
+				_tingHuCard[itr->first].insert(elem - 1);
+			
 			else
-			{
-				_tingCard.insert(itr->first);
-				_huCard.insert(elem-1),_huCard.insert(elem+2);
-			}
+				_tingHuCard[itr->first].insert({elem - 1, elem + 2});
+			
 		}
 		else if(n2)
 		{
 			if(lastCard[elem+2] == 0) continue;
 			--TemplastCard[elem],--TemplastCard[elem+2];
 			auto itr = find_if(TemplastCard.begin(),TemplastCard.end(),[](hashMap::value_type itr){ return itr.second == 1; });
-			_tingCard.insert(itr->first);
-			_huCard.insert(elem+1);
+			_tingHuCard[itr->first].insert(elem + 1);
 		}
 	}
 }
 
 void Analyser::Solution0(hashMap& lastCard)
 {
-	for (auto &elem : _userCard)
-		_tingCard.insert(elem.first);
-
+	_huFlag = true;
 	return;
 }
 
@@ -275,34 +300,30 @@ void Analyser::Solution2(hashMap& lastCard)
 	switch (kindNum)
 	{
 	case 1:
-		
-		for (auto &elem : lastCard)
-		{
-			_tingCard.insert(elem.first);
-			_tingHuCard[elem.first].insert(elem.first);
-		}
-		break;
-		
+	{
+		_huFlag = true;
+		return;
+	}
+
 	case 2:
-		{
-			hashSet temp;
-			BYTE GangCard = 0;
-			for(auto &elem:lastCard)
-			{
-				if(_userCard[elem.first] == 4) 
-					GangCard = elem.first;		// 防止在手里已经有四张牌的时候但是达成听这张牌的条件
-				temp.insert(elem.first);
-			}
-			if(GangCard)
-				_tingCard.insert(GangCard);
-			else
-				_tingCard.insert(temp.begin(),temp.end());
-			break;
-		}
-	default:
+	{
+		vector<int> key;
+		for (auto &elem : lastCard)
+			key.push_back(elem.first);
+
+		_tingHuCard[key[0]].insert(key[1]);
+		_tingHuCard[key[1]].insert(key[0]);
+
 		break;
 	}
+
+	default:
+		cerr<<"Solution2 failed"<<endl;
+	}
+
+	return;
 }
+
 void Analyser::Solution3(hashMap& lastCard)
 {
 	int kindNum = lastCard.size();
@@ -310,14 +331,17 @@ void Analyser::Solution3(hashMap& lastCard)
 	{
 	case 2:
 		{
+			int single, pair;
 			for(auto& elem:lastCard)
 			{
-				if(elem.second == 1)
-					_tingCard.insert(elem.first);
+				if (elem.second == 1)
+					single = elem.first;
 				else
-					_huCard.insert(elem.first);
+					pair = elem.first;
 			}
-			set<int> CardValue;
+			_tingHuCard[single].insert(pair);
+			
+			hashSet CardValue;
 			for (auto& initElem : lastCard)
 				CardValue.insert(initElem.first);
 
@@ -326,7 +350,7 @@ void Analyser::Solution3(hashMap& lastCard)
 		}
 	case 3:
 		{
-			set<int> CardValue;
+			hashSet CardValue;
 			for(auto& initElem:lastCard) 
 				CardValue.insert(initElem.first);
 
@@ -343,34 +367,32 @@ void Analyser::Solution5(hashMap& lastCard)
 	{
 	case 2:
 		{
-			for (auto &elem : lastCard)
-			{
-				_tingCard.insert(elem.first);
-				_huCard.insert(elem.first);
-			}
-			break;
+			_huFlag = true;
+			return;
 		}
 	case 3:
 		{
+			int single;
+			vector<int> pair;
 		    for (auto& elem : lastCard)
 		    {
-			    if (elem.second == 1)
-				_tingCard.insert(elem.first);
-			    else
-				_huCard.insert(elem.first);
+				if (elem.second == 1)
+					single = elem.first;
+				else
+					pair.push_back(elem.first);
 		    }
+			_tingHuCard[single].insert({ pair[0],pair[1] });
 			break;
 		}
 
 	case 4:
 		{
-			set<int> CardValue;
+			hashSet CardValue;
 			for(auto& initElem:lastCard) 
 			{
 				if(initElem.second == 2)
 				{
 					lastCard[initElem.first] = 0;
-					//lastCard.erase(initElem.first);
 					continue;
 				}
 				CardValue.insert(initElem.first);
@@ -388,10 +410,9 @@ void Analyser::resetState()
 {
 	analyseCount = 0;
 	_magicCardSize = 0;
+	_huFlag = false;
 
 	_userCard.clear();
-	_tingCard.clear();
-	_huCard.clear();
 	_tingHuCard.clear();
 }
 
