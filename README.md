@@ -14,6 +14,6 @@ hashMap   _tingHuCard: 用户打出哪些牌，可胡哪些牌,key表示打出�
 
   
 int analyseCount：统计的进行递归的次数，用作性能分析  
-boo _huFlag: 胡牌标志
+boo _huFlag: 胡牌标志  
 int _magicCard：万能牌  
 int _magicCardSize：万能牌的数量
