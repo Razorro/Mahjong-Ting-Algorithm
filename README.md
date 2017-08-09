@@ -1,5 +1,6 @@
 # Mahjong-Ting-AnalyseAlgorithm
 分析一组牌可打出哪些牌来进入听牌状态，以及进入听牌状态时可胡的牌
+// This is a test!
 
 ***
 ## 思路
